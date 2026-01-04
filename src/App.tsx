@@ -6,13 +6,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminProvider } from "@/contexts/AdminContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import Landing from "./pages/Landing";
-import Sheet from "./pages/Sheet";
-import Contests from "./pages/Contests";
-import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
+import Index from "@/pages/Index";
+import Sheet from "@/pages/Sheet";
+import Contests from "@/pages/Contests";
+import Dashboard from "@/pages/Dashboard";
+import Profile from "@/pages/Profile";
+import Admin from "@/pages/Admin";
+import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +27,7 @@ const App = () => (
             <Navbar />
             <main className="flex-1">
               <Routes>
-                <Route path="/" element={<Landing />} />
+                <Route path="/" element={<Index />} />
                 <Route path="/sheet" element={<Sheet />} />
                 <Route path="/contests" element={<Contests />} />
                 <Route path="/dashboard" element={<Dashboard />} />
