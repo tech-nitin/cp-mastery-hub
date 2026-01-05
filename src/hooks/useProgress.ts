@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 interface Progress {
   solvedProblems: Set<string>;
   attemptedProblems: Set<string>;
+  bookmarkedProblems: Set<string>;
   streak: number;
   lastSolveDate: string | null;
   dailySolves: Record<string, number>;
@@ -15,6 +16,7 @@ const getInitialProgress = (): Progress => {
     return {
       solvedProblems: new Set(),
       attemptedProblems: new Set(),
+      bookmarkedProblems: new Set(),
       streak: 0,
       lastSolveDate: null,
       dailySolves: {},
@@ -29,6 +31,7 @@ const getInitialProgress = (): Progress => {
         ...parsed,
         solvedProblems: new Set(parsed.solvedProblems || []),
         attemptedProblems: new Set(parsed.attemptedProblems || []),
+        bookmarkedProblems: new Set(parsed.bookmarkedProblems || []),
       };
     }
   } catch (e) {
@@ -38,6 +41,7 @@ const getInitialProgress = (): Progress => {
   return {
     solvedProblems: new Set(),
     attemptedProblems: new Set(),
+    bookmarkedProblems: new Set(),
     streak: 0,
     lastSolveDate: null,
     dailySolves: {},
@@ -53,6 +57,7 @@ export const useProgress = () => {
       ...progress,
       solvedProblems: Array.from(progress.solvedProblems),
       attemptedProblems: Array.from(progress.attemptedProblems),
+      bookmarkedProblems: Array.from(progress.bookmarkedProblems),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
   }, [progress]);
@@ -116,6 +121,23 @@ export const useProgress = () => {
     });
   }, []);
 
+  const toggleBookmark = useCallback((problemId: string) => {
+    setProgress(prev => {
+      const newBookmarked = new Set(prev.bookmarkedProblems);
+      
+      if (newBookmarked.has(problemId)) {
+        newBookmarked.delete(problemId);
+      } else {
+        newBookmarked.add(problemId);
+      }
+
+      return {
+        ...prev,
+        bookmarkedProblems: newBookmarked,
+      };
+    });
+  }, []);
+
   const isSolved = useCallback((problemId: string) => {
     return progress.solvedProblems.has(problemId);
   }, [progress.solvedProblems]);
@@ -124,11 +146,44 @@ export const useProgress = () => {
     return progress.attemptedProblems.has(problemId);
   }, [progress.attemptedProblems]);
 
+  const isBookmarked = useCallback((problemId: string) => {
+    return progress.bookmarkedProblems.has(problemId);
+  }, [progress.bookmarkedProblems]);
+
   const getStats = useCallback(() => {
+    // Calculate current streak properly
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+    const today = new Date();
+    
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      if ((progress.dailySolves[dateStr] || 0) > 0) {
+        tempStreak++;
+        if (i === 0 || currentStreak > 0) {
+          currentStreak = tempStreak;
+        }
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        if (i === 0) {
+          // Today has no solves, check if yesterday had solves for current streak
+          tempStreak = 0;
+        } else {
+          tempStreak = 0;
+        }
+      }
+    }
+
     return {
       totalSolved: progress.solvedProblems.size,
       totalAttempted: progress.attemptedProblems.size,
-      streak: progress.streak,
+      totalBookmarked: progress.bookmarkedProblems.size,
+      streak: currentStreak,
+      longestStreak,
       dailySolves: progress.dailySolves,
     };
   }, [progress]);
@@ -137,6 +192,7 @@ export const useProgress = () => {
     setProgress({
       solvedProblems: new Set(),
       attemptedProblems: new Set(),
+      bookmarkedProblems: new Set(),
       streak: 0,
       lastSolveDate: null,
       dailySolves: {},
@@ -147,8 +203,10 @@ export const useProgress = () => {
     progress,
     markSolved,
     markAttempted,
+    toggleBookmark,
     isSolved,
     isAttempted,
+    isBookmarked,
     getStats,
     resetProgress,
   };
